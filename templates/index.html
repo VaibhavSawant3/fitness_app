@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fitness Tracker</title>
+
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>Fitness Tracker</h1>
+
+<div class="tabs">
+    <button id="calBtn" onclick="setMode('calories')" class="active">Calories Counter</button>
+    <button id="exBtn" onclick="setMode('exercise')">Exercise Tracker</button>
+</div>
+
+<h2 id="currentMode">Calories Counter</h2>
+
+<!-- Calendar -->
+<div id="calendar"></div>
+
+<!-- Selected Date -->
+<h3 id="selectedDateText">Select a date</h3>
+
+<!-- Note Input -->
+<textarea id="noteInput" placeholder="Write your note..."></textarea>
+
+<br><br>
+<button id="saveBtn" onclick="saveNote()">Save</button>
+
+<h3>Notes:</h3>
+<ul id="notesList"></ul>
+
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script src="/static/script.js"></script>
+
+</body>
+</html>
