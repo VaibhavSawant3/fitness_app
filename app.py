@@ -1,82 +1,76 @@
 from flask import Flask, render_template, request, jsonify
-import sqlite3
+from supabase import create_client
 
-# ✅ Step 1: Create app FIRST
+# Supabase config
+SUPABASE_URL = "https://dbwuherxwmxlnlrcssty.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRid3VoZXJ4d214bG5scmNzc3R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjc4NDQsImV4cCI6MjA4OTk0Mzg0NH0.kQkF8p290G3xya6JP5_pDE-Krnz3nicJMdVI41x6a2w"
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 app = Flask(__name__)
 
-# ✅ Step 2: DB function
-def init_db():
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS notes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT,
-            type TEXT,
-            content TEXT
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
-
-# ✅ Step 3: Routes AFTER app defined
-
+# Home page
 @app.route('/')
 def home():
     return render_template('index.html')
 
 
+# SAVE or UPDATE note
 @app.route('/save', methods=['POST'])
 def save_note():
     data = request.json
 
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
+    # Check if note exists
+    response = supabase.table("notes") \
+        .select("*") \
+        .eq("date", data['date']) \
+        .eq("type", data['type']) \
+        .execute()
 
-    c.execute("SELECT id FROM notes WHERE date=? AND type=?", (data['date'], data['type']))
-    existing = c.fetchone()
+    existing = response.data
 
     if existing:
-        c.execute("UPDATE notes SET content=? WHERE date=? AND type=?",
-                  (data['content'], data['date'], data['type']))
+        # UPDATE
+        supabase.table("notes") \
+            .update({"content": data['content']}) \
+            .eq("date", data['date']) \
+            .eq("type", data['type']) \
+            .execute()
     else:
-        c.execute("INSERT INTO notes (date, type, content) VALUES (?, ?, ?)",
-                  (data['date'], data['type'], data['content']))
-
-    conn.commit()
-    conn.close()
+        # INSERT
+        supabase.table("notes").insert({
+            "date": data['date'],
+            "type": data['type'],
+            "content": data['content']
+        }).execute()
 
     return jsonify({"status": "saved"})
 
 
+# GET notes
 @app.route('/get/<date>/<type>')
 def get_notes(date, type):
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
+    response = supabase.table("notes") \
+        .select("*") \
+        .eq("date", date) \
+        .eq("type", type) \
+        .execute()
 
-    c.execute("SELECT id, content FROM notes WHERE date=? AND type=?", (date, type))
-    notes = c.fetchall()
-
-    conn.close()
-
-    return jsonify([{"id": n[0], "content": n[1]} for n in notes])
+    return jsonify(response.data)
 
 
+# DELETE note
 @app.route('/delete/<int:id>', methods=['DELETE'])
 def delete_note(id):
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-
-    c.execute("DELETE FROM notes WHERE id=?", (id,))
-    conn.commit()
-    conn.close()
+    supabase.table("notes") \
+        .delete() \
+        .eq("id", id) \
+        .execute()
 
     return jsonify({"status": "deleted"})
 
 
-# ✅ Step 4: Run app LAST
+# Run app
 if __name__ == '__main__':
-    init_db()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=10000)
+
